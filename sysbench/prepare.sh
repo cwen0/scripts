@@ -17,5 +17,5 @@ done
 for id in $(seq 1 $TABLES); do
     echo insert sbtest$id ...
     $TIDB_IMPORTER -u root -P ${PORT} -h "$MYSQL_HOST" -c 512 -n $SIZE -b 100 -D "${DATABASE}" \
-        -t "create table if not exists sbtest$id(id INTEGER UNSIGNED primary key NOT NULL AUTO_INCREMENT comment '[[range=1,$SIZE]]', k INTEGER, c varchar(120), pad CHAR(60));"
+        -t "create table if not exists sbtest$id(k INTEGER, c varchar(120), pad CHAR(60));"
 done
