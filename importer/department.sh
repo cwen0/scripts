@@ -1,4 +1,4 @@
-#!/bim/bash
+#!/bin/bash
 if  [ $# != 3 ];  then
     echo "Usage: $0 port passwd  count"
     exit 1
