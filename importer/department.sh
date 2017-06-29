@@ -10,5 +10,5 @@ count=$3
 
 importer -t "create table department(Id int, Name varchar(20));"  \
        -h  127.0.0.1  -P ${port} -D test -p ${passwd}  \
-       -n ${count}  \
+       -n ${count} \
        -c 100 -b 100
