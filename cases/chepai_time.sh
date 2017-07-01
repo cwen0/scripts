@@ -29,16 +29,16 @@ echo ***1kw + 1kw + 1kw***
 time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(id) FROM (select * from chepai_1k t union all select * from chepai_1k s union all select * from chepai_1k k) s group by nation;" >/dev/null
 sleep 20
 echo ***2kw + 1kw + 5kw***
-time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(id) FROM (select * from chepai_2k t union all select * from chepai_1k s union all select * from chepai_3k k) s group by nation;" >/dev/null
+time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(id) FROM (select * from chepai_2k t union all select * from chepai_1k s union all select * from chepai_5k k) s group by nation;" >/dev/null
 sleep 20
 echo ***2kw + 2kw + 5kw***
-time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(id) FROM (select * from chepai_2k t union all select * from chepai_2k s union all select * from chepai_3k k) s group by nation;" >/dev/null
+time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(id) FROM (select * from chepai_2k t union all select * from chepai_2k s union all select * from chepai_5k k) s group by nation;" >/dev/null
 sleep 20
 echo ***2kw + 5kw + 5kw***
-time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(id) FROM  (select * from chepai_2k t union all select * from chepai_3k s union all select * from chepai_3k k) s group by nation;" >/dev/null
+time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(id) FROM  (select * from chepai_2k t union all select * from chepai_5k s union all select * from chepai_5k k) s group by nation;" >/dev/null
 sleep 20
 echo ***5kw + 5kw + 5kw***
-time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(id) FROM  (select * from chepai_3k t union all select * from chepai_3k s union all select * from chepai_3k k) s group by nation;" >/dev/null
+time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(id) FROM  (select * from chepai_5k t union all select * from chepai_5k s union all select * from chepai_5k k) s group by nation;" >/dev/null
 sleep 20
 
 echo case5:
