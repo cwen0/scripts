@@ -16,6 +16,7 @@ sleep 20
 echo ***2kw join 2kw***
 time mysql -h 127.0.0.1 -P 4000 -u root -D test -Ne "SELECT count(s.id) FROM chepai_2k t join chepai_2k s on t.city = s.city group by s.nation;" >/dev/null
 sleep 20
+
 echo case3:
 for i in 1 2 5;
 do
