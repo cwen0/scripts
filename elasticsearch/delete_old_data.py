@@ -1,23 +1,21 @@
 #!/usr/bin/python
 import argparse
+import datetime
+import pyelasticsearch
 from elasticsearch import Elasticsearch 
 
 def deleteOldIndexes(host, port): 
-    es = Elasticsearch([{'host': hostm, 'port': port}])
+    es = Elasticsearch([{'host': host, 'port': port}])
     del_date = int((datetime.datetime.today() + datetime.timedelta(-7)).strftime("%Y%m%d"))
 
-    res = es.cat.indices(index="logstash-*")
+    indices = es.indices.get('_all')
 
-    for index in res.split('\n'):
-        if index != '':
-            print index
-            index_name = index.split(' ')[2]
-            print index_name
-            index_date = int(('').join(index.split(' ')[2].split('-')[2].split('.')))
+    for index in indices:
+        if index.find("logstash") != -1:
+            index_date = int(('').join(index.split('-')[1].split('.')))
             if index_date < del_date:
-                print index_date
-                es.indices.delete(index='logstash-%s' %index_name,
-                              request_timeout=300)
+		print 'delete :%s' %index
+                es.indices.delete(index, request_timeout=300)
 
 def main():
     parser = argparse.ArgumentParser()
