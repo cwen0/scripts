@@ -58,9 +58,11 @@ def restore_cluster():
     result = subprocess.run(cmd, stdout=subprocess.PIPE)
 
     if result.returncode != 0:
-        print(result.stdout)
-        print(result.stderr)
-        sys.exit(1)
+        result_2 = subprocess.run(cmd, stdout=subprocess.PIPE)
+        if result_2.returncode != 0:
+            print(result.stdout)
+            print(result.stderr)
+            sys.exit(1)
 
 
 def drop_cache():
