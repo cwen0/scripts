@@ -27,7 +27,7 @@ def run_sysbench(bench, starttime, benchtime, warmuptime, count):
             print(result.stdout)
             sys.exit(1)
 
-        results = append(gen_sysbench_result(bench, index+1))
+        results.append(gen_sysbench_result(bench, index+1))
 
     data = {
         "bench_type": "sysbench",
@@ -41,8 +41,8 @@ def run_sysbench(bench, starttime, benchtime, warmuptime, count):
         "bench_result": {
             "tps": sum(d['tps'] for d in results) / len(results),
             "qps": sum(d['qps'] for d in results) / len(results),
-            "lantency_avg": sum(d['lan_avg'] for in results) / len(results),
-            "lantency_95th": sum(d['lan_95th'] for in results) / len(results),
+            "lantency_avg": sum(d['lan_avg'] for d in results) / len(results),
+            "lantency_95th": sum(d['lan_95th'] for d in results) / len(results),
             "time_elapsed": benchtime
         }
     }
@@ -52,14 +52,11 @@ def run_sysbench(bench, starttime, benchtime, warmuptime, count):
 
 
 def restore_cluster():
-    cmd = ["sh", "-c", "ansible-playbook stop.yml;" +
-           "ansible -i inventory.ini tikv_servers -m shell -a 'cd /tmp/tidb/deploy/; rm -rf data; cp -R data.bak data';" +
-           "ansible -i inventory.ini pd_servers -m shell -a 'cd /tmp/tidb/deploy/; rm -rf data.pd; cp -R datapd.bak data.pd;'" +
-                "ansible-playbook start.yml;'"]
+    cmd = ["bash", "./restore.sh", "> restore.log"]
     result = subprocess.run(cmd, stdout=subprocess.PIPE)
 
     if result.returncode != 0:
-        print(tps_result.stdout)
+        print(result.stdout)
         print(result.stderr)
         sys.exit(1)
 
@@ -69,7 +66,7 @@ def drop_cache():
     result = subprocess.run(cmd, stdout=subprocess.PIPE)
 
     if result.returncode != 0:
-        print(tps_result.stdout)
+        print(result.stdout)
         print(result.stderr)
         sys.exit(1)
 
