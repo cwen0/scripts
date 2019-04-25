@@ -1,0 +1,13 @@
+FROM centos:7.5.1804
+
+WORKDIR /root
+
+RUN yum -y install git make wget tar
+ADD https://dl.google.com/go/go1.11.linux-amd64.tar.gz /root/build/go1.11.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf /root/build/go1.11.linux-amd64.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH}"
+ENV GOROOT /usr/local/go
+ENV GOPATH /root/dev/go
+
+
+
