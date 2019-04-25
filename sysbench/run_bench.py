@@ -103,7 +103,7 @@ def gen_sysbench_result(bench, index):
         print(lan_95th_result.stderr)
         sys.exit(1)
 
-    return {"tps": float(tps_result.stdout), "qps":float(qps_result.stdout),
+    return {"tps": float(tps_result.stdout), "qps": float(qps_result.stdout),
             "lan_avg": float(lan_avg_result.stdout),
             "lan_95th": float(lan_95th_result.stdout)}
 
