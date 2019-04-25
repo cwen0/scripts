@@ -29,6 +29,8 @@ def run_sysbench(bench, starttime, benchtime, warmuptime, count):
 
         results.append(gen_sysbench_result(bench, index+1))
 
+    print(results)
+
     data = {
         "bench_type": "sysbench",
         "bench_method": bench,
