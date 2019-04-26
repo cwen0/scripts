@@ -41,10 +41,10 @@ def run_sysbench(bench, starttime, benchtime, warmuptime, count):
             "tikv": get_tikv_info()
         },
         "bench_result": {
-            "tps": sum(d['tps'] for d in results) / len(results),
-            "qps": sum(d['qps'] for d in results) / len(results),
-            "lantency_avg": sum(d['lan_avg'] for d in results) / len(results),
-            "lantency_95th": sum(d['lan_95th'] for d in results) / len(results),
+            "tps": round(sum(d['tps'] for d in results) / len(results), 2),
+            "qps": round(sum(d['qps'] for d in results) / len(results), 2),
+            "lantency_avg": round(sum(d['lan_avg'] for d in results) / len(results), 2),
+            "lantency_95th": round(sum(d['lan_95th'] for d in results) / len(results), 2),
             "time_elapsed": benchtime
         }
     }
