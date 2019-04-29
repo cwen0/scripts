@@ -6,6 +6,7 @@ import subprocess
 import sys
 import re
 import json
+import numpy as np
 
 
 def run_sysbench(bench, starttime, benchtime, warmuptime, count):
@@ -19,7 +20,7 @@ def run_sysbench(bench, starttime, benchtime, warmuptime, count):
                " --time=" + str(benchtime) +
                " --report-interval=10 --db-driver=mysql --tables=32" +
                "--table-size=1000000 --threads=256 --warmup-time=" +
-               str(warmuptime) +" run > "+ bench + str(index+1) + ".result"]
+               str(warmuptime) + " run > " + bench + str(index+1) + ".result"]
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
 
         if result.returncode != 0:
@@ -27,9 +28,29 @@ def run_sysbench(bench, starttime, benchtime, warmuptime, count):
             print(result.stdout)
             sys.exit(1)
 
-        results.append(gen_sysbench_result(bench, index+1))
+        one_result = gen_sysbench_result(bench, index+1)
+        print(one_result)
+        results.append(one_result)
 
-    print(results)
+    handle_data(bench, starttime, benchtime, results)
+
+
+def handle_data(bench, starttime, benchtime, values):
+    tps_list = []
+    tps_list.extend(d["tps"] for d in values)
+    tps_dict = computeStats(tps_list)
+
+    qps_list = []
+    qps_list.extend(d["qps"] for d in values)
+    qps_dict = computeStats(qps_list)
+
+    lantency_avg_list = []
+    lantency_avg_list.extend(d["lan_avg"] for d in values)
+    lantency_avg_dict = computeStats(lantency_avg_list)
+
+    lantency_95th_list = []
+    lantency_95th_list.extend(d["lan_95th"] for d in values)
+    lantency_95th_dict = computeStats(lantency_95th_list)
 
     data = {
         "bench_type": "sysbench",
@@ -41,16 +62,69 @@ def run_sysbench(bench, starttime, benchtime, warmuptime, count):
             "tikv": get_tikv_info()
         },
         "bench_result": {
-            "tps": round(sum(d['tps'] for d in results) / len(results), 2),
-            "qps": round(sum(d['qps'] for d in results) / len(results), 2),
-            "lantency_avg": round(sum(d['lan_avg'] for d in results) / len(results), 2),
-            "lantency_95th": round(sum(d['lan_95th'] for d in results) / len(results), 2),
+            "tps_value": tps_dict["value"],
+            "tps_deviation": tps_dict["deviation"],
+            "tps_var": tps_dict["var"],
+            "tps_std": tps_dict["std"],
+            "qps_value": qps_dict["value"],
+            "qps_deviation": qps_dict["deviation"],
+            "qps_var": qps_dict["var"],
+            "qps_std": qps_dict["std"],
+            "lantency_avg_value": lantency_avg_dict["value"],
+            "lantency_avg_deviation": lantency_avg_dict["deviation"],
+            "lantency_avg_var": lantency_avg_dict["var"],
+            "lantency_avg_std": lantency_avg_dict["std"],
+            "lantency_95th_value": lantency_95th_dict["value"],
+            "lantency_95th_deviation": lantency_95th_dict["deviation"],
+            "lantency_95th_var": lantency_95th_dict["var"],
+            "lantency_95th_std": lantency_95th_dict["std"],
             "time_elapsed": benchtime
         }
     }
 
+    print(data)
+
     with open(bench+'.json', 'w') as outfile:
         json.dump(data, outfile)
+
+
+def computeStats(values):
+    q1 = np.percentile(values, 25)
+    q3 = np.percentile(values, 75)
+    lo = q1 - 1.5 * (q3 - q1)
+    hi = q3 + 1.5 * (q3 - q1)
+
+    r_values = []
+
+    for v in values:
+        if lo <= v and v <= hi:
+            r_values.append(v)
+
+    data = {
+        "min": np.min(r_values),
+        "max": np.max(r_values),
+        "mean": round(np.mean(r_values), 3),
+        "var": round(np.var(r_values), 4),
+        "std": round(np.std(r_values), 4)
+    }
+
+    data["deviation"] = round(deviation(data), 5)
+    data["value"] = data["mean"]
+
+    return data
+
+
+def deviation(data):
+    if data["mean"] == 0 or data["max"] == 0:
+        return 0
+
+    diff = 1 - data["min"]/data["mean"]
+    d = data["max"] / data["mean"] - 1
+    if d > diff:
+        diff = d
+
+    # return "± %.2f%%" % (diff * 100)
+    return diff
 
 
 def restore_cluster():
@@ -66,7 +140,8 @@ def restore_cluster():
 
 
 def drop_cache():
-    cmd = ["sudo", "sh", "-c", "sync; /usr/bin/echo 3 > /proc/sys/vm/drop_caches"]
+    cmd = ["sudo", "sh", "-c",
+           "sync; /usr/bin/echo 3 > /proc/sys/vm/drop_caches"]
     result = subprocess.run(cmd, stdout=subprocess.PIPE)
 
     if result.returncode != 0:
@@ -76,28 +151,32 @@ def drop_cache():
 
 
 def gen_sysbench_result(bench, index):
-    tps_cmd = ["sh", "-c", "cat " + bench + str(index) + ".result |grep -e 'transactions:'|awk -F['(',' ']+ '{print $4}'"]
+    tps_cmd = ["sh", "-c", "cat " + bench + str(index) +
+               ".result |grep -e 'transactions:'|awk -F['(',' ']+ '{print $4}'"]
     tps_result = subprocess.run(tps_cmd, stdout=subprocess.PIPE)
     if tps_result.returncode != 0:
         print(tps_result.stdout)
         print(tps_result.stderr)
         sys.exit(1)
 
-    qps_cmd = ["sh", "-c", "cat " + bench + str(index) + ".result |grep -e 'queries:'|awk -F['(',' ']+ '{print $4}'"]
-    qps_result = subprocess.run(tps_cmd, stdout=subprocess.PIPE)
+    qps_cmd = ["sh", "-c", "cat " + bench + str(index) +
+               ".result |grep -e 'queries:'|awk -F['(',' ']+ '{print $4}'"]
+    qps_result = subprocess.run(qps_cmd, stdout=subprocess.PIPE)
     if qps_result.returncode != 0:
         print(qps_result.stdout)
         print(qps_result.stderr)
         sys.exit(1)
 
-    lan_avg_cmd = ["sh", "-c", "cat " + bench + str(index) + ".result | grep 'avg:' | awk '{print $2}'"]
+    lan_avg_cmd = ["sh", "-c", "cat " + bench + str(index) +
+                   ".result | grep 'avg:' | awk '{print $2}'"]
     lan_avg_result = subprocess.run(lan_avg_cmd, stdout=subprocess.PIPE)
     if lan_avg_result.returncode != 0:
         print(lan_avg_result.stdout)
         print(lan_avg_result.stderr)
         sys.exit(1)
 
-    lan_95th_cmd = ["sh", "-c", "cat " + bench + str(index) + ".result | grep '95th percentile:' | awk '{print $3}'"]
+    lan_95th_cmd = ["sh", "-c", "cat " + bench + str(index) +
+                    ".result | grep '95th percentile:' | awk '{print $3}'"]
     lan_95th_result = subprocess.run(lan_95th_cmd, stdout=subprocess.PIPE)
     if lan_95th_result.returncode != 0:
         print(lan_95th_result.stdout)
@@ -119,13 +198,21 @@ def get_pd_info():
         return info
 
     pattern = re.compile('Git Commit Hash: (.*?)\n')
-    info["commit"] = re.findall(pattern, result.stdout.decode('utf-8'))[0]
+    info["commit"] = re.findall(pattern,
+                                result.stdout.decode('utf-8'))[0].strip()
 
     branch_pattern = re.compile("Git Branch: (.*?)\n")
-    info["branch"] = re.findall(branch_pattern, result.stdout.decode('utf-8'))[0]
+    info["branch"] = re.findall(branch_pattern,
+                                result.stdout.decode('utf-8'))[0].strip()
 
     tag_pattern = re.compile("Release Version: (.*?)\n")
-    info["tag"] = re.findall(tag_pattern, result.stdout.decode('utf-8'))[0]
+    info["tag"] = re.findall(tag_pattern,
+                             result.stdout.decode('utf-8'))[0].strip()
+
+    build_time = re.compile("UTC Build Time: (.*?)\n")
+    info["build_time"] = re.findall(build_time,
+                                    result.stdout.decode('utf-8'))[0].strip()
+
     info["count"] = 1
     return info
 
@@ -140,13 +227,21 @@ def get_tidb_info():
         return info
 
     pattern = re.compile('Git Commit Hash: (.*?)\n')
-    info["commit"] = re.findall(pattern, result.stdout.decode('utf-8'))[0]
+    info["commit"] = re.findall(pattern,
+                                result.stdout.decode('utf-8'))[0].strip()
 
     branch_pattern = re.compile("Git Branch: (.*?)\n")
-    info["branch"] = re.findall(branch_pattern, result.stdout.decode('utf-8'))[0]
+    info["branch"] = re.findall(branch_pattern,
+                                result.stdout.decode('utf-8'))[0].strip()
 
     tag_pattern = re.compile("Release Version: (.*?)\n")
-    info["tag"] = re.findall(tag_pattern, result.stdout.decode('utf-8'))[0]
+    info["tag"] = re.findall(tag_pattern,
+                             result.stdout.decode('utf-8'))[0].strip()
+
+    build_time = re.compile("UTC Build Time: (.*?)\n")
+    info["build_time"] = re.findall(build_time,
+                                    result.stdout.decode('utf-8'))[0].strip()
+
     info["count"] = 1
     return info
 
@@ -161,13 +256,21 @@ def get_tikv_info():
         return info
 
     pattern = re.compile('Git Commit Hash: (.*?)\n')
-    info["commit"] = re.findall(pattern, result.stdout.decode('utf-8'))[0]
+    info["commit"] = re.findall(pattern,
+                                result.stdout.decode('utf-8'))[0].strip()
 
     branch_pattern = re.compile("Git Commit Branch: (.*?)\n")
-    info["branch"] = re.findall(branch_pattern, result.stdout.decode('utf-8'))[0]
+    info["branch"] = re.findall(branch_pattern,
+                                result.stdout.decode('utf-8'))[0].strip()
 
     tag_pattern = re.compile("Release Version: (.*?)\n")
-    info["tag"] = re.findall(tag_pattern, result.stdout.decode('utf-8'))[0]
+    info["tag"] = re.findall(tag_pattern,
+                             result.stdout.decode('utf-8'))[0].strip()
+
+    build_time = re.compile("UTC Build Time: (.*?)\n")
+    info["build_time"] = re.findall(build_time,
+                                    result.stdout.decode('utf-8'))[0].strip()
+
     info["count"] = 1
     return info
 
@@ -177,13 +280,16 @@ def main():
     parser.add_argument("-bench", type=str, required=True,
                         help="bench method, oltp_point_select/oltp_insert/oltp_update_index/oltp_update_non_index/oltp_read_write")
     parser.add_argument("-starttime", type=str, help="start time")
-    parser.add_argument("-benchtime", type=int, help="bench time", default=3600)
-    parser.add_argument("-warmuptime", type=int, help="warmup time", default=600)
+    parser.add_argument("-benchtime", type=int,
+                        help="bench time", default=3600)
+    parser.add_argument("-warmuptime", type=int,
+                        help="warmup time", default=600)
     parser.add_argument("-count", type=int, help="run count", default=1)
 
     args = parser.parse_args()
 
-    run_sysbench(args.bench, args.starttime, args.benchtime, args.warmuptime, args.count)
+    run_sysbench(args.bench, args.starttime,
+                 args.benchtime, args.warmuptime, args.count)
 
 
 if __name__ == "__main__":
