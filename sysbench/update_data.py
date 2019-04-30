@@ -25,7 +25,6 @@ def handle_sysbench_file(path, name):
     last_result = dict()
     if last_result is None or len(old_result) == 0:
         last_result = None
-        logging.info("get empty")
     else:
         last_result = list(old_result.get_points())[0]
 
@@ -87,17 +86,17 @@ pd: %s(%s) %s
                value.get("current", {}).get("bench_result", {}).get("qps_deviation", 0) * 100,
                value.get("current", {}).get("bench_result", {}).get("qps_std"),
                ((value.get("current", {}).get("bench_result", {}).get("qps_value", 0) -
-                value.get("last_point", {}).get("qps_value", 0))/value.get("last_point", {}).get("qps_value", 0)) * 100,
+                value.get("last_point", {}).get("qps_value", 0))/value.get("last_point", {}).get("qps_value", 1)) * 100,
                value.get("current", {}).get("bench_result", {}).get("lantency_avg_value", 0),
                value.get("current", {}).get("bench_result", {}).get("lantency_avg_deviation", 0) * 100,
                value.get("current", {}).get("bench_result", {}).get("lantency_avg_std"),
                ((value.get("current", {}).get("bench_result", {}).get("lantency_avg_value", 0) -
-                value.get("last_point", {}).get("lantency_avg_value", 0))/value.get("last_point", {}).get("lantency_avg_value", 0)) * 100,
+                value.get("last_point", {}).get("lantency_avg_value", 0))/value.get("last_point", {}).get("lantency_avg_value", 1)) * 100,
                value.get("current", {}).get("bench_result", {}).get("lantency_95th_value", 0),
                value.get("current", {}).get("bench_result", {}).get("lantency_95th_deviation", 0) * 100,
                value.get("current", {}).get("bench_result", {}).get("lantency_95th_std"),
                ((value.get("current", {}).get("bench_result", {}).get("lantency_95th_value", 0) -
-                 value.get("last_point", {}).get("lantency_95th_value", 0))/value.get("last_point", {}).get("lantency_95th_value", 0)) * 100))
+                 value.get("last_point", {}).get("lantency_95th_value", 0))/value.get("last_point", {}).get("lantency_95th_value", 1)) * 100))
 
     print("http://172.16.30.12:30000/d/Ta8TFPzWz/benchmark?orgId=1")
 
