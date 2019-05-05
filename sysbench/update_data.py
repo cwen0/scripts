@@ -100,10 +100,10 @@ pd: %s(%s) %s
     """ % (results[0].get("current", {}).get("cluster_info", {}).get("tidb", {}).get("commit", ""),
            results[0].get("current", {}).get("cluster_info", {}).get("tidb", {}).get("branch", ""),
            results[0].get("current", {}).get("cluster_info", {}).get("tidb", {}).get("build_time", ""),
+           results[0].get("current", {}).get("cluster_info", {}).get("tikv", {}).get("commit", ""),
            results[0].get("current", {}).get("cluster_info", {}).get("tikv", {}).get("branch", ""),
            results[0].get("current", {}).get("cluster_info", {}).get("tikv", {}).get("build_time", ""),
-           results[0].get("current", {}).get("cluster_info", {}).get("tikv", {}).get("branch", ""),
-           results[0].get("current", {}).get("cluster_info", {}).get("pd", {}).get("tag", ""),
+           results[0].get("current", {}).get("cluster_info", {}).get("pd", {}).get("commit", ""),
            results[0].get("current", {}).get("cluster_info", {}).get("pd", {}).get("branch", ""),
            results[0].get("current", {}).get("cluster_info", {}).get("pd", {}).get("build_time", "")))
 
@@ -114,10 +114,10 @@ pd: %s(%s) %s
     """ % (results[0].get("last_point", {}).get("tidb_commit", ""),
            results[0].get("last_point", {}).get("tidb_branch", ""),
            results[0].get("last_point", {}).get("tidb_build_time", ""),
+           results[0].get("last_point", {}).get("tikv_commit", ""),
            results[0].get("last_point", {}).get("tikv_branch", ""),
            results[0].get("last_point", {}).get("tikv_build_time", ""),
-           results[0].get("last_point", {}).get("tikv_branch", ""),
-           results[0].get("last_point", {}).get("pd_tag", ""),
+           results[0].get("last_point", {}).get("pd_commit", ""),
            results[0].get("last_point", {}).get("pd_branch", ""),
            results[0].get("last_point", {}).get("pd_build_time", "")))
 
