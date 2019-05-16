@@ -9,18 +9,20 @@ import json
 import numpy as np
 
 
-def run_sysbench(bench, starttime, benchtime, warmuptime, count):
+def run_sysbench(bench_method, randtype, starttime, benchtime, warmuptime, count):
     results = []
     for index in range(count):
         restore_cluster()
         drop_cache()
-        cmd = ["sh", "-c", "sysbench " + bench +
+        cmd = ["sh", "-c", "sysbench " + bench_method +
                " --mysql-host=127.0.0.1 --mysql-port=4000 --mysql-user=root" +
                " --mysql-db=sbtest" +
                " --time=" + str(benchtime) +
+               " --rand-type=" + randtype +
+               " --mysql-ignore-errors=all" +
                " --report-interval=10 --db-driver=mysql --tables=32" +
                "--table-size=1000000 --threads=256 --warmup-time=" +
-               str(warmuptime) + " run > " + bench + str(index+1) + ".result"]
+               str(warmuptime) + " run > " + "{}_{}".format(bench_method, randtype) + str(index+1) + ".result"]
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
 
         if result.returncode != 0:
@@ -28,14 +30,14 @@ def run_sysbench(bench, starttime, benchtime, warmuptime, count):
             print(result.stdout)
             sys.exit(1)
 
-        one_result = gen_sysbench_result(bench, index+1)
+        one_result = gen_sysbench_result("{}_{}".format(bench_method, randtype), index+1)
         print(one_result)
         results.append(one_result)
 
-    handle_data(bench, starttime, benchtime, results)
+    handle_data(bench_method, randtype, starttime, benchtime, results)
 
 
-def handle_data(bench, starttime, benchtime, values):
+def handle_data(bench_method, randtype, starttime, benchtime, values):
     tps_list = []
     tps_list.extend(d["tps"] for d in values)
     tps_dict = computeStats(tps_list)
@@ -53,8 +55,8 @@ def handle_data(bench, starttime, benchtime, values):
     lantency_95th_dict = computeStats(lantency_95th_list)
 
     data = {
-        "bench_type": "sysbench",
-        "bench_method": bench,
+        "bench_type": "sysbench" if randtype == "special" or randtype == "" else "sysbench_{}".format(randtype),
+        "bench_method": bench_method,
         "bench_time": starttime,
         "cluster_info": {
             "pd": get_pd_info(),
@@ -84,7 +86,7 @@ def handle_data(bench, starttime, benchtime, values):
 
     print(data)
 
-    with open(bench+'.json', 'w') as outfile:
+    with open(bench_method+'.json', 'w') as outfile:
         json.dump(data, outfile)
 
 
@@ -285,10 +287,11 @@ def main():
     parser.add_argument("-warmuptime", type=int,
                         help="warmup time", default=600)
     parser.add_argument("-count", type=int, help="run count", default=1)
+    parser.add_argument("-randtype", type=str, help="random numbers distribution", default="special")
 
     args = parser.parse_args()
 
-    run_sysbench(args.bench, args.starttime,
+    run_sysbench(args.bench, args.randtype, args.starttime,
                  args.benchtime, args.warmuptime, args.count)
 
 

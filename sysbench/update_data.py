@@ -16,11 +16,14 @@ def handle_sysbench_file(path, name):
     with open(path + "/" + name, "r") as outfile:
         result = json.load(outfile)
 
+    bench_type = result["bench_type"]
+
     client = InfluxDBClient('172.16.30.11', 8086, '', '', 'benchbot')
     old_result = client.query("""
                 select * from benchbot
                 where bench_method = '%s'
-                order by time desc limit 1 """ % (result["bench_method"]))
+                and bench_type = '%s'
+                order by time desc limit 1 """ % (result["bench_method"], bench_type))
 
     last_result = dict()
     if last_result is not None and len(list(old_result.get_points())) != 0:
@@ -32,7 +35,7 @@ def handle_sysbench_file(path, name):
     data = [{
         "measurement": "benchbot",
         "tags": {
-            "bench_type": result["bench_type"],
+            "bench_type": bench_type,
             "bench_method": result["bench_method"],
             "tidb_commit": result["cluster_info"]["tidb"]["commit"],
             "tidb_branch": result["cluster_info"]["tidb"]["branch"],
