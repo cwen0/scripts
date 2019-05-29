@@ -5,13 +5,14 @@ import os
 import json
 import sys
 import logging
+import argparse
 import datetime
 from influxdb import InfluxDBClient
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-def handle_sysbench_file(path, name):
+def handle_sysbench_file(path, name, instance):
     result = dict()
     with open(path + "/" + name, "r") as outfile:
         result = json.load(outfile)
@@ -23,7 +24,8 @@ def handle_sysbench_file(path, name):
                 select * from benchbot
                 where bench_method = '%s'
                 and bench_type = '%s'
-                order by time desc limit 1 """ % (result["bench_method"], bench_type))
+                and instance = '%s'
+                order by time desc limit 1 """ % (result["bench_method"], bench_type, instance))
 
     last_result = dict()
     if last_result is not None and len(list(old_result.get_points())) != 0:
@@ -37,6 +39,7 @@ def handle_sysbench_file(path, name):
         "tags": {
             "bench_type": bench_type,
             "bench_method": result["bench_method"],
+            "instance": instance,
             "tidb_commit": result["cluster_info"]["tidb"]["commit"],
             "tidb_branch": result["cluster_info"]["tidb"]["branch"],
             "tidb_build_time": result["cluster_info"]["tidb"]["build_time"],
@@ -87,10 +90,15 @@ def handle_sysbench_file(path, name):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-instance", type=str, help="instance", default="bench")
+
+    args = parser.parse_args()
+
     results = []
     files = os.listdir("data")
     for file in files:
-        results.append(handle_sysbench_file("data", file))
+        results.append(handle_sysbench_file("data", file, args.instance))
 
     if len(results) <= 0:
         logging.error("results is empty")
