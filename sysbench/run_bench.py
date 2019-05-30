@@ -9,7 +9,7 @@ import json
 import numpy as np
 
 
-def run_sysbench(bench_method, randtype, starttime, benchtime, warmuptime, count):
+def run_sysbench(bench_method, randtype, starttime, benchtime, warmuptime, count, threads):
     results = []
     for index in range(count):
         restore_cluster()
@@ -21,7 +21,8 @@ def run_sysbench(bench_method, randtype, starttime, benchtime, warmuptime, count
                " --rand-type=" + randtype +
                " --mysql-ignore-errors=all" +
                " --report-interval=10 --db-driver=mysql --tables=32" +
-               "--table-size=1000000 --threads=256 --warmup-time=" +
+               " --threads=" + threads +
+               " --table-size=1000000 --warmup-time=" +
                str(warmuptime) + " run > " + "{}_{}".format(bench_method, randtype) + str(index+1) + ".result"]
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
 
@@ -288,11 +289,12 @@ def main():
                         help="warmup time", default=600)
     parser.add_argument("-count", type=int, help="run count", default=1)
     parser.add_argument("-randtype", type=str, help="random numbers distribution", default="special")
+    parser.add_argument("-threads", type=int, help="threads count", default=256)
 
     args = parser.parse_args()
 
     run_sysbench(args.bench, args.randtype, args.starttime,
-                 args.benchtime, args.warmuptime, args.count)
+                 args.benchtime, args.warmuptime, args.count, args.threads)
 
 
 if __name__ == "__main__":
