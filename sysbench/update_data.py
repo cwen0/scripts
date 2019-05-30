@@ -91,7 +91,7 @@ def handle_sysbench_file(path, name, instance):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-instance", type=str, help="instance", default="bench")
+    parser.add_argument("-instance", type=str, help="instance", default="general")
 
     args = parser.parse_args()
 
