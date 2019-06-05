@@ -94,7 +94,7 @@ def run_tests(offset, limit, unique_id, file_server):
 def update_stores(offset, limit, unique_id, file_server):
     end = offset+limit
     store_name = "store-" + str(offset) + "-" + str(end) + ".tar.gz"
-    filepath = "tests/pingcap/jepsen/" + unique_id + "/" + store_name
+    filepath = "tests/pingcap/jepsen/" + str(unique_id) + "/" + store_name
     cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
            "'cd /jepsen/tidb/ && tar tar -zcvf " + store_name + " store && " +
            " curl -F " + filepath + "=@" + store_name + " " + file_server + "/upload'"]
