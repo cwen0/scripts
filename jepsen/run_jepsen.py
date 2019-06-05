@@ -62,7 +62,7 @@ def gen_tests():
         for option in workloads[w]:
             for ne in nemesis:
                 tests.append("lein run test --workload=" + w + " --time-limit=120 --concurrency 2n " +
-                             "--auto-retry=default --auto-retry-limit=default --version=latest" +
+                             "--auto-retry=default --auto-retry-limit=default --version=latest " +
                              "--nemesis=" + ne + " " + option + " --ssh-private-key /root/.ssh/id_rsa")
 
     tests.sort()
