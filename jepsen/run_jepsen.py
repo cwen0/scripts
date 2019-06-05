@@ -64,7 +64,8 @@ def gen_tests():
                 tests.append("lein run test --workload=" + w + " --time-limit=120 --concurrency 2n " +
                              "--nemesis=" + ne + " " + option + " --ssh-private-key /root/.ssh/id_rsa")
 
-    return tests
+    tests.sort()
+    return  tests
 
 
 def sampling(selection, offset=0, limit=None):
