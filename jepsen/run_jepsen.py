@@ -6,7 +6,6 @@ import sys
 import subprocess
 
 
-
 def all_nemesis():
     process_faults = ["kill-pd", "kill-kv", "kill-db", "pause-pd", "pause-kv", "pause-db"]
     network_faults = ["partition"]
@@ -51,6 +50,7 @@ def workload_options():
         "table":[]
     }
 
+
 def gen_tests():
     nemesis = all_nemesis()
     workloads = workload_options()
@@ -74,9 +74,10 @@ def run_tests(offset, limit):
     to_run_tests = sampling(tests, offset, limit)
     # print to_run_tests
     for test in to_run_tests:
-        cmd = ["sh", "-c", "docker exec -it jepsen-control bash -c " +
+        cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
                            "'cd /jepsen/tidb/ && timeout --preserve-status 7200 " + test + "'"]
 
+        print(cmd)
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
 
         if result.returncode != 0:
