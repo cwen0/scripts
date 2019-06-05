@@ -96,7 +96,7 @@ def update_stores(offset, limit, unique_id, file_server):
     store_name = "store-" + str(offset) + "-" + str(end) + ".tar.gz"
     filepath = "tests/pingcap/jepsen/" + str(unique_id) + "/" + store_name
     cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
-           "'cd /jepsen/tidb/ && tar tar -zcvf " + store_name + " store && " +
+           "'cd /jepsen/tidb/ && tar -zcvf " + store_name + " store && " +
            " curl -F " + filepath + "=@" + store_name + " " + file_server + "/upload'"]
     print(cmd)
     result = subprocess.run(cmd, stdout=subprocess.PIPE)
