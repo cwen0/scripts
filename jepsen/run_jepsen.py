@@ -71,7 +71,7 @@ def sampling(selection, offset=0, limit=None):
     return selection[offset:(limit + offset if limit is not None else None)]
 
 
-def run_tests(offset, limit):
+def run_tests(offset, limit, unique_id, file_server):
     tests = gen_tests()
     to_run_tests = sampling(tests, offset, limit)
     # print to_run_tests
@@ -85,11 +85,26 @@ def run_tests(offset, limit):
         if result.returncode != 0:
             print(result.stderr)
             print(result.stdout)
+            update_stores(offset, limit, unique_id, file_server)
             sys.exit(1)
 
+    update_stores(offset, limit, unique_id, file_server)
 
-# def update_stores():
 
+def update_stores(offset, limit, unique_id, file_server):
+    end = offset+limit
+    store_name = "store-" + offset + "-" + end + ".tar.gz"
+    filepath = "tests/pingcap/jepsen/" + unique_id + "/" + store_name
+    cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
+           "'cd /jepsen/tidb/ && tar tar -zcvf " + store_name + " store && " +
+           " curl -F " + filepath + "=@" + store_name + " " + file_server + "/upload'"]
+    print(cmd)
+    result = subprocess.run(cmd, stdout=subprocess.PIPE)
+
+    if result.returncode != 0:
+        print(result.stderr)
+        print(result.stdout)
+        sys.exit(1)
 
 
 def main():
@@ -97,6 +112,8 @@ def main():
     parser.add_argument("--return-count", type=bool, default=False, help="return the numbers of test")
     parser.add_argument("--offset", type=int, default=0, help="offset of tests to run")
     parser.add_argument("--limit", type=int, default=5, help="limit of tests to run")
+    parser.add_argument("--unique-id", type=int, default=0, help="unique id")
+    parser.add_argument("--file-server", type=str, default="http://172.16.30.25", help="file server")
 
     args = parser.parse_args()
 
@@ -104,7 +121,7 @@ def main():
         print (len(gen_tests()))
         sys.exit(0)
 
-    run_tests(args.offset, args.limit)
+    run_tests(args.offset, args.limit, args.unique_id, args.file_server)
 
 
 if __name__ == "__main__":
