@@ -16,32 +16,34 @@ def all_nemesis():
     nemesis.extend(process_faults)
     nemesis.extend(network_faults)
     nemesis.extend(schedule_faults)
-    for n in schedule_faults:
-        for pf in process_faults:
-            nemesis.append(n+","+pf)
-        for nf in network_faults:
-            nemesis.append(n+","+nf)
-
-    nemesis.append("kill-pd,kill-db,pause-pd,kill-kv,shuffle-leader,partition,"
-                   "shuffle-region,pause-kv,pause-db,random-merge")
+    # for n in schedule_faults:
+    #     for pf in process_faults:
+    #         nemesis.append(n+","+pf)
+    #     for nf in network_faults:
+    #         nemesis.append(n+","+nf)
+    #nemesis.append("kill-pd,kill-db,pause-pd,kill-kv,shuffle-leader,partition,"
+    #               "shuffle-region,pause-kv,pause-db,random-merge")
 
     return nemesis
 
 
 def workload_options():
     return {
-        "append": ["--predicate-read=true", "--predicate-read=false",
+        "append": ["",
+                   "--predicate-read=true",
                    "--read-lock=update --predicate-read=true",
                    "--read-lock=update --predicate-read=false"],
         # "bank": ["--update-in-place=true", "--update-in-place=false",
         #          "--read-lock=update --update-in-place=true",
         #          "--read-lock=update --update-in-place=false"],
-        "bank-multitable": ["--update-in-place=true", "--update-in-place=false",
-                 "--read-lock=update --update-in-place=true",
-                 "--read-lock=update --update-in-place=false"],
+        "bank-multitable": ["",
+                            "--update-in-place=true",
+                            "--read-lock=update --update-in-place=true",
+                            "--read-lock=update --update-in-place=false"],
         # "long-fork": ["--use-index=true", "--use-index=false"],
         # "monotonic": ["--use-index=true", "--use-index=false"],
-        "register": ["--use-index=true", "--use-index=false",
+        "register": ["",
+                     "--use-index=true",
                      "--read-lock=update --use-index=true",
                      "--read-lock=update --use-index-false"],
         "set-cas": ["", "--read-lock=update"],
@@ -75,7 +77,7 @@ def run_tests(offset, limit):
     # print to_run_tests
     for test in to_run_tests:
         cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
-                           "'cd /jepsen/tidb/ && timeout --preserve-status 7200 " + test + "'"]
+                           "'cd /jepsen/tidb/ && timeout --preserve-status 7200 " + test + "> jepsen.log'"]
 
         print(cmd)
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
@@ -84,6 +86,10 @@ def run_tests(offset, limit):
             print(result.stderr)
             print(result.stdout)
             sys.exit(1)
+
+
+# def update_stores():
+
 
 
 def main():
