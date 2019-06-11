@@ -108,6 +108,8 @@ def update_stores(offset, limit, unique_id, file_server):
         print(result.stdout)
         sys.exit(1)
 
+    print(file_server + "/download/tests/pingcap/jepsen/" + str(unique_id) + "/" + store_name)
+
 
 def main():
     parser = argparse.ArgumentParser()
