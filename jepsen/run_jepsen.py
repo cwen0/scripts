@@ -53,7 +53,7 @@ def workload_options():
     }
 
 
-def gen_tests():
+def gen_tests(version, tarball, time_limit):
     nemesis = all_nemesis()
     workloads = workload_options()
 
@@ -61,9 +61,10 @@ def gen_tests():
     for w in workloads:
         for option in workloads[w]:
             for ne in nemesis:
-                tests.append("lein run test --workload=" + w + " --time-limit=120 --concurrency 2n " +
-                             "--auto-retry=default --auto-retry-limit=default --version=v3.0.0-rc.2 " +
-                             "--nemesis=" + ne + " " + option + " --ssh-private-key /root/.ssh/id_rsa")
+                tests.append("lein run test --workload=" + w + " --time-limit=" + str(time_limit) + " --concurrency 2n" +
+                             " --auto-retry=default --auto-retry-limit=default" +
+                             " --version=" + version + " --tarball-url=" + tarball +
+                             " --nemesis=" + ne + " " + option + " --ssh-private-key /root/.ssh/id_rsa")
 
     tests.sort()
     return  tests
@@ -73,8 +74,8 @@ def sampling(selection, offset=0, limit=None):
     return selection[offset:(limit + offset if limit is not None else None)]
 
 
-def run_tests(offset, limit, unique_id, file_server):
-    tests = gen_tests()
+def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limit):
+    tests = gen_tests(version, tarball, time_limit)
     to_run_tests = sampling(tests, offset, limit)
     # print to_run_tests
     for test in to_run_tests:
@@ -118,6 +119,11 @@ def main():
     parser.add_argument("--limit", type=int, default=5, help="limit of tests to run")
     parser.add_argument("--unique-id", type=int, default=0, help="unique id")
     parser.add_argument("--file-server", type=str, default="http://172.16.30.25", help="file server")
+    parser.add_argument("--version", type=str, default="latest", help="tidb version")
+    parser.add_argument("--tarball", type=str,
+                        default="http://172.16.30.25/download/builds/pingcap/release/tidb-latest-linux-amd64.tar.gz",
+                        help="tidb tarball url")
+    parser.add_argument("--time-limit", type=int, default=120, help="time limit for each jepsen test")
 
     args = parser.parse_args()
 
@@ -125,7 +131,7 @@ def main():
         print (len(gen_tests()))
         sys.exit(0)
 
-    run_tests(args.offset, args.limit, args.unique_id, args.file_server)
+    run_tests(args.offset, args.limit, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit)
 
 
 if __name__ == "__main__":
