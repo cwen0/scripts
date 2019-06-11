@@ -128,7 +128,7 @@ def main():
     args = parser.parse_args()
 
     if args.return_count:
-        print (len(gen_tests()))
+        print (len(gen_tests(args.version, args.tarball, args.time_limit)))
         sys.exit(0)
 
     run_tests(args.offset, args.limit, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit)
