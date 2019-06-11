@@ -45,7 +45,7 @@ def workload_options():
         "register": ["",
                      "--use-index=true",
                      "--read-lock=update --use-index=true",
-                     "--read-lock=update --use-index-false"],
+                     "--read-lock=update --use-index=false"],
         "set-cas": ["", "--read-lock=update"],
         "set": [],
         # "sequential": [],
