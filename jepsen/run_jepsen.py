@@ -88,8 +88,22 @@ def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limi
         if result.returncode != 0:
             print(result.stderr)
             print(result.stdout)
-            update_stores(offset, limit, unique_id, file_server)
-            sys.exit(1)
+
+            print("retry...")
+            print(cmd)
+            result = subprocess.run(cmd, stdout=subprocess.PIPE)
+            if result.returncode != 0:
+                print(result.stderr)
+                print(result.stdout)
+
+                print("retry...")
+                print(cmd)
+                result = subprocess.run(cmd, stdout=subprocess.PIPE)
+                if result.returncode != 0:
+                    print(result.stderr)
+                    print(result.stdout)
+                    update_stores(offset, limit, unique_id, file_server)
+                    sys.exit(1)
 
     update_stores(offset, limit, unique_id, file_server)
 
