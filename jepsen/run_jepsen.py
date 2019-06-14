@@ -82,28 +82,24 @@ def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limi
         cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
                            "'cd /jepsen/tidb/ && timeout --preserve-status 7200 " + test + "> jepsen.log'"]
 
-        print(cmd)
-        result = subprocess.run(cmd, stdout=subprocess.PIPE)
-
-        if result.returncode != 0:
-            print(result.stderr)
-            print(result.stdout)
-
-            print("retry...")
+        max_retry = 3
+        for i in range(max_retry):
             print(cmd)
             result = subprocess.run(cmd, stdout=subprocess.PIPE)
+
             if result.returncode != 0:
                 print(result.stderr)
                 print(result.stdout)
 
-                print("retry...")
-                print(cmd)
-                result = subprocess.run(cmd, stdout=subprocess.PIPE)
-                if result.returncode != 0:
-                    print(result.stderr)
-                    print(result.stdout)
+                if i >= max_retry-1:
+                    print("failed to exec jepsen test")
                     update_stores(offset, limit, unique_id, file_server)
                     sys.exit(1)
+
+                print("retry...")
+            else:
+                break
+
 
     update_stores(offset, limit, unique_id, file_server)
 
