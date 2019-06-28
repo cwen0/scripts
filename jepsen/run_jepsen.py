@@ -128,7 +128,7 @@ def main():
     parser.add_argument("--offset", type=int, default=0, help="offset of tests to run")
     parser.add_argument("--limit", type=int, default=5, help="limit of tests to run")
     parser.add_argument("--unique-id", type=int, default=0, help="unique id")
-    parser.add_argument("--file-server", type=str, default="http://172.16.30.25", help="file server")
+    parser.add_argument("--file-server", type=str, default="http://fileserver.pingcap.net", help="file server")
     parser.add_argument("--version", type=str, default="latest", help="tidb version")
     parser.add_argument("--tarball", type=str,
                         default="http://172.16.30.25/download/builds/pingcap/release/tidb-latest-linux-amd64.tar.gz",
