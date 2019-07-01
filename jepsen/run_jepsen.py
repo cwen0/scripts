@@ -49,13 +49,28 @@ def workload_options():
         "set-cas": ["", "--read-lock=update"],
         "set": [],
         # "sequential": [],
-        "table":[]
+        "table": []
     }
 
 
-def gen_tests(version, tarball, time_limit):
+def workload_options_only_for_update():
+    return {
+        "bank": ["--read-lock=update"],
+        "bank-multitable": ["--read-lock=update --update-in-place=true",
+                            "--read-lock=update --update-in-place=false"],
+        "register": ["--read-lock=update --use-index=true",
+                     "--read-lock=update --use-index=false"],
+        "set-cas": ["--read-lock=update"]
+    }
+
+
+def gen_tests(version, tarball, time_limit, only_for_update):
     nemesis = all_nemesis()
+
     workloads = workload_options()
+
+    if only_for_update:
+        workloads = workload_options_only_for_update()
 
     tests = []
     for w in workloads:
@@ -74,8 +89,8 @@ def sampling(selection, offset=0, limit=None):
     return selection[offset:(limit + offset if limit is not None else None)]
 
 
-def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limit):
-    tests = gen_tests(version, tarball, time_limit)
+def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limit, only_for_update):
+    tests = gen_tests(version, tarball, time_limit, only_for_update)
     to_run_tests = sampling(tests, offset, limit)
     # print to_run_tests
     for test in to_run_tests:
@@ -134,14 +149,15 @@ def main():
                         default="http://172.16.30.25/download/builds/pingcap/release/tidb-latest-linux-amd64.tar.gz",
                         help="tidb tarball url")
     parser.add_argument("--time-limit", type=int, default=120, help="time limit for each jepsen test")
+    parser.add_argument("--only-for-update", type=bool, default=False, help="only run test case with `select for update`")
 
     args = parser.parse_args()
 
     if args.return_count:
-        print (len(gen_tests(args.version, args.tarball, args.time_limit)))
+        print (len(gen_tests(args.version, args.tarball, args.time_limit, args.only_for_update)))
         sys.exit(0)
 
-    run_tests(args.offset, args.limit, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit)
+    run_tests(args.offset, args.limit, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit, args.only_for_update)
 
 
 if __name__ == "__main__":
