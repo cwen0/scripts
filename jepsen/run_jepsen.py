@@ -122,7 +122,7 @@ def run_special_test(test, store_name, unique_id, file_server, version, tarball,
     test = "lein run test " + test + \
            " --version=" + version + \
            " --tarball-url=" + tarball + \
-           " --time-limit=" + time_limit + \
+           " --time-limit=" + str(time_limit) + \
            " --auto-retry=default --auto-retry-limit=default" + \
            " --concurrency 2n --ssh-private-key /root/.ssh/id_rsa"
 
