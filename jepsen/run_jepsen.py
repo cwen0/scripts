@@ -21,7 +21,7 @@ def all_nemesis():
     #         nemesis.append(n+","+pf)
     #     for nf in network_faults:
     #         nemesis.append(n+","+nf)
-    #nemesis.append("kill-pd,kill-db,pause-pd,kill-kv,shuffle-leader,partition,"
+    # nemesis.append("kill-pd,kill-db,pause-pd,kill-kv,shuffle-leader,partition,"
     #               "shuffle-region,pause-kv,pause-db,random-merge")
 
     return nemesis
@@ -82,7 +82,7 @@ def gen_tests(version, tarball, time_limit, only_for_update):
                              " --nemesis=" + ne + " " + option + " --ssh-private-key /root/.ssh/id_rsa")
 
     tests.sort()
-    return  tests
+    return tests
 
 
 def sampling(selection, offset=0, limit=None):
@@ -115,8 +115,55 @@ def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limi
             else:
                 break
 
-
     update_stores(offset, limit, unique_id, file_server)
+
+
+def run_special_test(test, store_name, unique_id, file_server, version, tarball, time_limit):
+    test = "lein run test " + test + \
+           " --version=" + version + \
+           " --tarball-url=" + tarball + \
+           " --time-limit=" + time_limit + \
+           " --auto-retry=default --auto-retry-limit=default" + \
+           " --concurrency 2n --ssh-private-key /root/.ssh/id_rsa"
+
+    cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
+           "'cd /jepsen/tidb/ && timeout --preserve-status 7200 " + test + "> jepsen.log'"]
+
+    max_retry = 3
+    for i in range(max_retry):
+        print(cmd)
+        result = subprocess.run(cmd, stdout=subprocess.PIPE)
+
+        if result.returncode != 0:
+            print(result.stderr)
+            print(result.stdout)
+
+            if i >= max_retry-1:
+                print("failed to exec jepsen test")
+                update_special_store(store_name, unique_id, file_server)
+                sys.exit(1)
+
+            print("retry...")
+        else:
+            break
+
+    update_special_store(store_name, unique_id, file_server)
+
+
+def update_special_store(store_name, unique_id, file_server):
+    filepath = "test/pingcap/jepsen" + str(unique_id) + "/" + store_name
+    cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
+           "'cd /jepsen/tidb/ && tar -zcvf " + store_name + " store && " +
+           " curl -F " + filepath + "=@" + store_name + " " + file_server + "/upload'"]
+    print(cmd)
+    result = subprocess.run(cmd, stdout=subprocess.PIPE)
+
+    if result.returncode != 0:
+        print(result.stderr)
+        print(result.stdout)
+        sys.exit(1)
+
+    print(file_server + "/download/tests/pingcap/jepsen/" + str(unique_id) + "/" + store_name)
 
 
 def update_stores(offset, limit, unique_id, file_server):
@@ -149,9 +196,16 @@ def main():
                         default="http://172.16.30.25/download/builds/pingcap/release/tidb-latest-linux-amd64.tar.gz",
                         help="tidb tarball url")
     parser.add_argument("--time-limit", type=int, default=120, help="time limit for each jepsen test")
-    parser.add_argument("--only-for-update", type=bool, default=False, help="only run test case with `select for update`")
+    parser.add_argument("--only-for-update", type=bool, default=False,
+                        help="only run test case with `select for update`")
+    parser.add_argument("--test", type=str, default="", help="special test to run")
+    parser.add_argument("--store-name", type=str, default="", help="store name to store")
 
     args = parser.parse_args()
+
+    if args.test:
+        run_special_test(args.test, args.store_name, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit)
+        sys.exit(0)
 
     if args.return_count:
         print (len(gen_tests(args.version, args.tarball, args.time_limit, args.only_for_update)))
