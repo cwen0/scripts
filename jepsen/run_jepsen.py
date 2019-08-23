@@ -95,7 +95,7 @@ def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limi
     # print to_run_tests
     for test in to_run_tests:
         cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
-                           "'cd /jepsen/tidb/ && timeout --preserve-status 7200 " + test + "> jepsen.log'"]
+                           "'cd /jepsen/tidb/ && timeout --preserve-status 1200 " + test + "> jepsen.log'"]
 
         max_retry = 3
         for i in range(max_retry):
