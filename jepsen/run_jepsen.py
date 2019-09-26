@@ -60,7 +60,8 @@ def workload_options_only_for_update():
                             "--read-lock=update --update-in-place=false"],
         "register": ["--read-lock=update --use-index=true",
                      "--read-lock=update --use-index=false"],
-        "set-cas": ["--read-lock=update"]
+        "set-cas": ["--read-lock=update"],
+        "append": ["--read-lock=update"]
     }
 
 
