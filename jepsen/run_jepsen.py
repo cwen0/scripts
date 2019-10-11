@@ -53,7 +53,7 @@ def workload_options():
     }
 
 
-def workload_options_only_for_update():
+def workload_options_for_pessimistic_txn():
     return {
         "bank": ["--read-lock=update"],
         "bank-multitable": ["--read-lock=update --update-in-place=true",
@@ -64,14 +64,18 @@ def workload_options_only_for_update():
         "append": ["--read-lock=update"]
     }
 
+def workload_options_for_mixed_txn():
+    # I'm not sure which tests can be passed, so use pessimistic transaction tests first.
+    return workload_options_for_pessimistic_txn()
 
-def gen_tests(version, tarball, time_limit, only_for_update):
+def gen_tests(version, tarball, time_limit, txn_mode):
     nemesis = all_nemesis()
 
     workloads = workload_options()
-
-    if only_for_update:
-        workloads = workload_options_only_for_update()
+    if txn_mode == "pessimistic":
+        workloads = workload_options_for_pessimistic_txn()
+    elif txn_mode == "mixed":
+        workloads = workload_options_for_mixed_txn()
 
     tests = []
     for w in workloads:
@@ -80,7 +84,8 @@ def gen_tests(version, tarball, time_limit, only_for_update):
                 tests.append("lein run test --workload=" + w + " --time-limit=" + str(time_limit) + " --concurrency 2n" +
                              " --auto-retry=default --auto-retry-limit=default" +
                              " --version=" + version + " --tarball-url=" + tarball +
-                             " --nemesis=" + ne + " " + option + " --ssh-private-key /root/.ssh/id_rsa")
+                             " --nemesis=" + ne + " " + option + " --ssh-private-key /root/.ssh/id_rsa" +
+                             " --txn-mode=" + txn_mode)
 
     tests.sort()
     return tests
@@ -90,8 +95,8 @@ def sampling(selection, offset=0, limit=None):
     return selection[offset:(limit + offset if limit is not None else None)]
 
 
-def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limit, only_for_update):
-    tests = gen_tests(version, tarball, time_limit, only_for_update)
+def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limit, txn_mode):
+    tests = gen_tests(version, tarball, time_limit, txn_mode)
     to_run_tests = sampling(tests, offset, limit)
     # print to_run_tests
     for test in to_run_tests:
@@ -128,7 +133,7 @@ def run_special_test(test, store_name, unique_id, file_server, version, tarball,
            " --concurrency 2n --ssh-private-key /root/.ssh/id_rsa"
 
     cmd = ["sh", "-c", "docker exec jepsen-control bash -c " +
-           "'cd /jepsen/tidb/ && timeout --preserve-status 7200 " + test + "> jepsen.log'"]
+           "'cd /jepsen/tidb/ && timeout --preserve-status 7200 " + test + " > jepsen.log'"]
 
     max_retry = 3
     for i in range(max_retry):
@@ -198,10 +203,10 @@ def main():
                         default="http://172.16.30.25/download/builds/pingcap/release/tidb-latest-linux-amd64.tar.gz",
                         help="tidb tarball url")
     parser.add_argument("--time-limit", type=int, default=120, help="time limit for each jepsen test")
-    parser.add_argument("--only-for-update", type=bool, default=False,
-                        help="only run test case with `select for update`")
     parser.add_argument("--test", type=str, default="", help="special test to run")
     parser.add_argument("--store-name", type=str, default="", help="store name to store")
+    parser.add_argument("--txn-mode", type=str, default="optimistic", choices=['optimistic', 'pessimistic', 'mixed'],
+                        help="transaction mode to test")
 
     args = parser.parse_args()
 
@@ -210,10 +215,10 @@ def main():
         sys.exit(0)
 
     if args.return_count:
-        print (len(gen_tests(args.version, args.tarball, args.time_limit, args.only_for_update)))
+        print (len(gen_tests(args.version, args.tarball, args.time_limit, args.txn_mode)))
         sys.exit(0)
 
-    run_tests(args.offset, args.limit, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit, args.only_for_update)
+    run_tests(args.offset, args.limit, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit, args.txn_mode)
 
 
 if __name__ == "__main__":
