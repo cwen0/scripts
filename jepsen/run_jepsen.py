@@ -64,9 +64,11 @@ def workload_options_for_pessimistic_txn():
         "append": ["--read-lock=update"]
     }
 
+
 def workload_options_for_mixed_txn():
     # I'm not sure which tests can be passed, so use pessimistic transaction tests first.
     return workload_options_for_pessimistic_txn()
+
 
 def gen_tests(version, tarball, time_limit, txn_mode):
     nemesis = all_nemesis()
@@ -124,11 +126,12 @@ def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limi
     update_stores(offset, limit, unique_id, file_server)
 
 
-def run_special_test(test, store_name, unique_id, file_server, version, tarball, time_limit):
+def run_special_test(test, store_name, unique_id, file_server, version, tarball, time_limit, txn_mode):
     test = "lein run test " + test + \
            " --version=" + version + \
            " --tarball-url=" + tarball + \
            " --time-limit=" + str(time_limit) + \
+           " --txn-mode=" + txn_mode + \
            " --auto-retry=default --auto-retry-limit=default" + \
            " --concurrency 2n --ssh-private-key /root/.ssh/id_rsa"
 
@@ -211,7 +214,7 @@ def main():
     args = parser.parse_args()
 
     if args.test:
-        run_special_test(args.test, args.store_name, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit)
+        run_special_test(args.test, args.store_name, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit, args.txn_mode)
         sys.exit(0)
 
     if args.return_count:
