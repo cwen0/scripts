@@ -80,7 +80,7 @@ def gen_tests(version, tarball, time_limit, txn_mode, follower_read):
         workloads = workload_options_for_mixed_txn()
 
     follower_c = ""
-    if follower_read
+    if follower_read:
         follower_c = " --follower-read=true"
 
     tests = []
