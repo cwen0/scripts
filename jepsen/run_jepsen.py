@@ -70,7 +70,7 @@ def workload_options_for_mixed_txn():
     return workload_options_for_pessimistic_txn()
 
 
-def gen_tests(version, tarball, time_limit, txn_mode):
+def gen_tests(version, tarball, time_limit, txn_mode, follower_read):
     nemesis = all_nemesis()
 
     workloads = workload_options()
@@ -78,6 +78,10 @@ def gen_tests(version, tarball, time_limit, txn_mode):
         workloads = workload_options_for_pessimistic_txn()
     elif txn_mode == "mixed":
         workloads = workload_options_for_mixed_txn()
+
+    follower_c = ""
+    if follower_read
+        follower_c = " --follower-read=true"
 
     tests = []
     for w in workloads:
@@ -87,7 +91,7 @@ def gen_tests(version, tarball, time_limit, txn_mode):
                              " --auto-retry=default --auto-retry-limit=default" +
                              " --version=" + version + " --tarball-url=" + tarball +
                              " --nemesis=" + ne + " " + option + " --ssh-private-key /root/.ssh/id_rsa" +
-                             " --txn-mode=" + txn_mode)
+                             " --txn-mode=" + txn_mode + follower_c)
 
     tests.sort()
     return tests
@@ -97,8 +101,8 @@ def sampling(selection, offset=0, limit=None):
     return selection[offset:(limit + offset if limit is not None else None)]
 
 
-def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limit, txn_mode):
-    tests = gen_tests(version, tarball, time_limit, txn_mode)
+def run_tests(offset, limit, unique_id, file_server, version, tarball, time_limit, txn_mode, follower_read):
+    tests = gen_tests(version, tarball, time_limit, txn_mode, follower_read)
     to_run_tests = sampling(tests, offset, limit)
     # print to_run_tests
     for test in to_run_tests:
@@ -210,18 +214,19 @@ def main():
     parser.add_argument("--store-name", type=str, default="", help="store name to store")
     parser.add_argument("--txn-mode", type=str, default="optimistic", choices=['optimistic', 'pessimistic', 'mixed'],
                         help="transaction mode to test")
+    parser.add_argument("--follower-read", type=bool, default=False, help="whether to open follower read")
 
     args = parser.parse_args()
-
-    if args.test:
-        run_special_test(args.test, args.store_name, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit, args.txn_mode)
-        sys.exit(0)
 
     if args.return_count:
         print (len(gen_tests(args.version, args.tarball, args.time_limit, args.txn_mode)))
         sys.exit(0)
 
-    run_tests(args.offset, args.limit, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit, args.txn_mode)
+    if args.test:
+        run_special_test(args.test, args.store_name, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit, args.txn_mode)
+        sys.exit(0)
+
+    run_tests(args.offset, args.limit, args.unique_id, args.file_server, args.version, args.tarball, args.time_limit, args.txn_mode, args.follower_read)
 
 
 if __name__ == "__main__":
